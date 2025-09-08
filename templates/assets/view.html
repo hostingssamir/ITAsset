@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset.name }} - تفاصيل الأصل{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1><i class="fas fa-laptop"></i> {{ asset.name }}</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('assets') }}">الأصول</a></li>
+                        <li class="breadcrumb-item active">{{ asset.asset_tag }}</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-auto">
+                <div class="btn-group" role="group">
+                    <a href="#" class="btn btn-outline-light">
+                        <i class="fas fa-edit"></i> تعديل
+                    </a>
+                    <a href="{{ url_for('asset_qr', id=asset.id) }}" class="btn btn-outline-light">
+                        <i class="fas fa-qrcode"></i> QR Code
+                    </a>
+                    <button type="button" class="btn btn-outline-light" onclick="window.print()">
+                        <i class="fas fa-print"></i> طباعة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- المعلومات الأساسية -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    المعلومات الأساسية
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold text-muted">رقم الأصل:</td>
+                                <td><span class="badge bg-primary fs-6">{{ asset.asset_tag }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">الاسم:</td>
+                                <td>{{ asset.name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">الفئة:</td>
+                                <td><span class="badge bg-secondary">{{ asset.category.name }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">الموقع:</td>
+                                <td>
+                                    {% if asset.location %}
+                                    {{ asset.location.name }}
+                                    {% if asset.location.building %}
+                                    <br><small class="text-muted">{{ asset.location.building }}</small>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">غير محدد</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">المورد:</td>
+                                <td>
+                                    {% if asset.supplier %}
+                                    {{ asset.supplier.name }}
+                                    {% else %}
+                                    <span class="text-muted">غير محدد</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold text-muted">الحالة:</td>
+                                <td>
+                                    <span class="badge status-{{ asset.status }} fs-6">
+                                        {% if asset.status == 'active' %}نشط
+                                        {% elif asset.status == 'maintenance' %}قيد الصيانة
+                                        {% elif asset.status == 'retired' %}متقاعد
+                                        {% elif asset.status == 'lost' %}مفقود
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">الحالة الفنية:</td>
+                                <td>
+                                    <span class="badge condition-{{ asset.condition }} fs-6">
+                                        {% if asset.condition == 'excellent' %}ممتاز
+                                        {% elif asset.condition == 'good' %}جيد
+                                        {% elif asset.condition == 'fair' %}مقبول
+                                        {% elif asset.condition == 'poor' %}ضعيف
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">تاريخ الإضافة:</td>
+                                <td>{{ asset.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">آخر تحديث:</td>
+                                <td>{{ asset.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if asset.description %}
+                <div class="mt-3">
+                    <h6 class="fw-bold text-muted">الوصف:</h6>
+                    <p>{{ asset.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- تفاصيل الجهاز -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog"></i>
+                    تفاصيل الجهاز
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6 class="fw-bold text-muted">العلامة التجارية</h6>
+                        <p>{{ asset.brand or 'غير محدد' }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold text-muted">الموديل</h6>
+                        <p>{{ asset.model or 'غير محدد' }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold text-muted">الرقم التسلسلي</h6>
+                        <p>{{ asset.serial_number or 'غير محدد' }}</p>
+                    </div>
+                </div>
+                
+                {% if asset.specifications %}
+                <div class="mt-3">
+                    <h6 class="fw-bold text-muted">المواصفات التقنية:</h6>
+                    <div class="bg-light p-3 rounded">
+                        <pre class="mb-0">{{ asset.specifications }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- المعلومات المالية -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-dollar-sign"></i>
+                    المعلومات المالية
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6 class="fw-bold text-muted">تاريخ الشراء</h6>
+                        <p>
+                            {% if asset.purchase_date %}
+                            {{ asset.purchase_date.strftime('%Y-%m-%d') }}
+                            {% else %}
+                            <span class="text-muted">غير محدد</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold text-muted">تكلفة الشراء</h6>
+                        <p>
+                            {% if asset.purchase_cost %}
+                            <span class="text-success fw-bold">{{ "{:,.2f}".format(asset.purchase_cost) }} ريال</span>
+                            {% else %}
+                            <span class="text-muted">غير محدد</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold text-muted">انتهاء الضمان</h6>
+                        <p>
+                            {% if asset.warranty_expiry %}
+                            {{ asset.warranty_expiry.strftime('%Y-%m-%d') }}
+                            {% if asset.warranty_expiry < today %}
+                            <br><span class="badge bg-danger">منتهي الصلاحية</span>
+                            {% elif asset.warranty_expiry < today + timedelta(days=30) %}
+                            <br><span class="badge bg-warning text-dark">ينتهي قريباً</span>
+                            {% else %}
+                            <br><span class="badge bg-success">ساري</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">غير محدد</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- سجل الصيانة -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-tools"></i>
+                    سجل الصيانة
+                </h5>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addMaintenanceModal">
+                    <i class="fas fa-plus"></i> إضافة صيانة
+                </button>
+            </div>
+            <div class="card-body">
+                {% if maintenance_records %}
+                <div class="timeline">
+                    {% for record in maintenance_records %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-{{ 'success' if record.status == 'completed' else 'warning' }}"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {% if record.maintenance_type == 'preventive' %}صيانة وقائية
+                                        {% elif record.maintenance_type == 'corrective' %}صيانة إصلاحية
+                                        {% elif record.maintenance_type == 'emergency' %}صيانة طارئة
+                                        {% endif %}
+                                    </h6>
+                                    <p class="mb-1">{{ record.description }}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> {{ record.maintenance_date.strftime('%Y-%m-%d') }}
+                                        {% if record.technician %}
+                                        | <i class="fas fa-user"></i> {{ record.technician }}
+                                        {% endif %}
+                                        {% if record.cost %}
+                                        | <i class="fas fa-dollar-sign"></i> {{ "{:,.2f}".format(record.cost) }} ريال
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <span class="badge bg-{{ 'success' if record.status == 'completed' else 'warning' }}">
+                                    {% if record.status == 'completed' %}مكتملة
+                                    {% elif record.status == 'in_progress' %}قيد التنفيذ
+                                    {% elif record.status == 'scheduled' %}مجدولة
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا يوجد سجل صيانة لهذا الأصل</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- سجل التخصيص -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-tag"></i>
+                    سجل التخصيص
+                </h5>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignAssetModal">
+                    <i class="fas fa-user-plus"></i> تخصيص للموظف
+                </button>
+            </div>
+            <div class="card-body">
+                {% if assignments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>الموظف</th>
+                                <th>القسم</th>
+                                <th>تاريخ التخصيص</th>
+                                <th>تاريخ الإرجاع</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr>
+                                <td>
+                                    <strong>{{ assignment.employee.full_name }}</strong>
+                                    <br><small class="text-muted">{{ assignment.employee.employee_id }}</small>
+                                </td>
+                                <td>{{ assignment.employee.department or 'غير محدد' }}</td>
+                                <td>{{ assignment.assigned_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if assignment.return_date %}
+                                    {{ assignment.return_date.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                    <span class="text-muted">لم يُرجع بعد</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if assignment.is_active else 'secondary' }}">
+                                        {{ 'نشط' if assignment.is_active else 'مُرجع' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لم يتم تخصيص هذا الأصل لأي موظف</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- الشريط الجانبي -->
+    <div class="col-lg-4">
+        <!-- صورة الأصل -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-image"></i>
+                    صورة الأصل
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                {% if asset.image_path %}
+                <img src="{{ url_for('static', filename='uploads/' + asset.image_path) }}" 
+                     class="img-fluid rounded" style="max-height: 300px;">
+                {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                     style="height: 200px;">
+                    <i class="fas fa-image fa-3x text-muted"></i>
+                </div>
+                <p class="text-muted mt-2">لا توجد صورة</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- QR Code -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-qrcode"></i>
+                    QR Code
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div id="qrcode" class="mb-3"></div>
+                <a href="{{ url_for('asset_qr', id=asset.id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-download"></i> تحميل QR Code
+                </a>
+            </div>
+        </div>
+        
+        <!-- إحصائيات سريعة -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i>
+                    إحصائيات سريعة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-2">
+                            <h4 class="text-primary mb-0">{{ maintenance_records|length }}</h4>
+                            <small class="text-muted">عمليات صيانة</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-2">
+                            <h4 class="text-success mb-0">{{ assignments|length }}</h4>
+                            <small class="text-muted">مرات التخصيص</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <h4 class="text-info mb-0">
+                                {% if asset.purchase_date %}
+                                {{ ((today - asset.purchase_date).days / 365.25) | round(1) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">سنوات الخدمة</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <h4 class="text-warning mb-0">
+                                {% if asset.warranty_expiry and asset.warranty_expiry > today %}
+                                {{ (asset.warranty_expiry - today).days }}
+                                {% else %}
+                                0
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">أيام الضمان</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الملاحظات -->
+        {% if asset.notes %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-sticky-note"></i>
+                    الملاحظات
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>{{ asset.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -23px;
+    top: 5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+@media print {
+    .btn, .card-header .btn {
+        display: none !important;
+    }
+    
+    .page-header {
+        background: none !important;
+        color: #000 !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+// إنشاء QR Code
+document.addEventListener('DOMContentLoaded', function() {
+    const qrData = {
+        asset_tag: '{{ asset.asset_tag }}',
+        name: '{{ asset.name }}',
+        url: '{{ url_for("view_asset", id=asset.id, _external=True) }}'
+    };
+    
+    QRCode.toCanvas(document.getElementById('qrcode'), JSON.stringify(qrData), {
+        width: 200,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+        }
+    }, function (error) {
+        if (error) console.error(error);
+    });
+});
+</script>
+{% endblock %}

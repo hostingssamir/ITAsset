@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # نظام إدارة الأصول التقنية
 ## IT Asset Management System
 
@@ -168,3 +169,6 @@ IT_Asset_Management/
 ---
 
 **تم تطويره بـ ❤️ للمجتمع العربي**
+=======
+# ITAsset
+>>>>>>> 86bded6b72fadb5fc360099d73cabd3fcaa4e7d2

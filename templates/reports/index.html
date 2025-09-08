@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}التقارير - نظام إدارة الأصول التقنية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-chart-bar"></i> التقارير والإحصائيات</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                <li class="breadcrumb-item active">التقارير</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- أنواع التقارير -->
+<div class="row">
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 report-card">
+            <div class="card-body text-center">
+                <div class="report-icon mb-3">
+                    <i class="fas fa-laptop fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title">تقرير الأصول</h5>
+                <p class="card-text">تقرير شامل عن جميع الأصول التقنية مع الإحصائيات والتفاصيل</p>
+                <div class="mt-auto">
+                    <a href="{{ url_for('reports_assets') }}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> عرض التقرير
+                    </a>
+                    <button class="btn btn-outline-primary" onclick="exportAssetsReport('pdf')">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportAssetsReport('excel')">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 report-card">
+            <div class="card-body text-center">
+                <div class="report-icon mb-3">
+                    <i class="fas fa-tools fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title">تقرير الصيانة</h5>
+                <p class="card-text">تقرير مفصل عن جميع أعمال الصيانة والتكاليف والجدولة</p>
+                <div class="mt-auto">
+                    <a href="{{ url_for('reports_maintenance') }}" class="btn btn-warning">
+                        <i class="fas fa-eye"></i> عرض التقرير
+                    </a>
+                    <button class="btn btn-outline-warning" onclick="exportMaintenanceReport('pdf')">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportMaintenanceReport('excel')">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 report-card">
+            <div class="card-body text-center">
+                <div class="report-icon mb-3">
+                    <i class="fas fa-dollar-sign fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title">التقرير المالي</h5>
+                <p class="card-text">تقرير التكاليف والاستهلاك والقيم المالية للأصول</p>
+                <div class="mt-auto">
+                    <a href="#" class="btn btn-success">
+                        <i class="fas fa-eye"></i> عرض التقرير
+                    </a>
+                    <button class="btn btn-outline-success" onclick="exportFinancialReport('pdf')">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportFinancialReport('excel')">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 report-card">
+            <div class="card-body text-center">
+                <div class="report-icon mb-3">
+                    <i class="fas fa-map-marker-alt fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title">تقرير المواقع</h5>
+                <p class="card-text">توزيع الأصول حسب المواقع والمباني والأقسام</p>
+                <div class="mt-auto">
+                    <a href="#" class="btn btn-info">
+                        <i class="fas fa-eye"></i> عرض التقرير
+                    </a>
+                    <button class="btn btn-outline-info" onclick="exportLocationReport('pdf')">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportLocationReport('excel')">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 report-card">
+            <div class="card-body text-center">
+                <div class="report-icon mb-3">
+                    <i class="fas fa-user-tag fa-3x text-purple"></i>
+                </div>
+                <h5 class="card-title">تقرير التخصيص</h5>
+                <p class="card-text">الأصول المخصصة للموظفين وحالات التخصيص</p>
+                <div class="mt-auto">
+                    <a href="#" class="btn btn-secondary">
+                        <i class="fas fa-eye"></i> عرض التقرير
+                    </a>
+                    <button class="btn btn-outline-secondary" onclick="exportAssignmentReport('pdf')">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportAssignmentReport('excel')">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 report-card">
+            <div class="card-body text-center">
+                <div class="report-icon mb-3">
+                    <i class="fas fa-chart-line fa-3x text-danger"></i>
+                </div>
+                <h5 class="card-title">تقرير مخصص</h5>
+                <p class="card-text">إنشاء تقارير مخصصة حسب معايير محددة</p>
+                <div class="mt-auto">
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#customReportModal">
+                        <i class="fas fa-plus"></i> إنشاء تقرير
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie"></i>
+                    إحصائيات سريعة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stats-box text-center p-3 border rounded">
+                            <i class="fas fa-laptop fa-2x text-primary mb-2"></i>
+                            <h4 class="text-primary">{{ total_assets }}</h4>
+                            <p class="mb-0">إجمالي الأصول</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stats-box text-center p-3 border rounded">
+                            <i class="fas fa-tools fa-2x text-warning mb-2"></i>
+                            <h4 class="text-warning">{{ total_maintenance }}</h4>
+                            <p class="mb-0">عمليات الصيانة</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stats-box text-center p-3 border rounded">
+                            <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                            <h4 class="text-success">{{ total_value }}</h4>
+                            <p class="mb-0">إجمالي القيمة</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stats-box text-center p-3 border rounded">
+                            <i class="fas fa-users fa-2x text-info mb-2"></i>
+                            <h4 class="text-info">{{ total_employees }}</h4>
+                            <p class="mb-0">الموظفين</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal التقرير المخصص -->
+<div class="modal fade" id="customReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إنشاء تقرير مخصص</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="customReportForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="report_type" class="form-label">نوع التقرير</label>
+                            <select class="form-select" id="report_type" name="report_type" required>
+                                <option value="">اختر نوع التقرير</option>
+                                <option value="assets">الأصول</option>
+                                <option value="maintenance">الصيانة</option>
+                                <option value="financial">مالي</option>
+                                <option value="location">المواقع</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="date_range" class="form-label">الفترة الزمنية</label>
+                            <select class="form-select" id="date_range" name="date_range">
+                                <option value="all">جميع الفترات</option>
+                                <option value="last_month">الشهر الماضي</option>
+                                <option value="last_3_months">آخر 3 أشهر</option>
+                                <option value="last_6_months">آخر 6 أشهر</option>
+                                <option value="last_year">السنة الماضية</option>
+                                <option value="custom">فترة مخصصة</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="custom_date_range" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">من تاريخ</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">إلى تاريخ</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="categories" class="form-label">الفئات</label>
+                        <select class="form-select" id="categories" name="categories" multiple>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">اتركه فارغاً لتشمل جميع الفئات</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="locations" class="form-label">المواقع</label>
+                        <select class="form-select" id="locations" name="locations" multiple>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">اتركه فارغاً لتشمل جميع المواقع</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">تنسيق التقرير</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="format_pdf" value="pdf" checked>
+                            <label class="form-check-label" for="format_pdf">
+                                <i class="fas fa-file-pdf text-danger"></i> PDF
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="format_excel" value="excel">
+                            <label class="form-check-label" for="format_excel">
+                                <i class="fas fa-file-excel text-success"></i> Excel
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="format_html" value="html">
+                            <label class="form-check-label" for="format_html">
+                                <i class="fas fa-globe text-primary"></i> عرض على الشاشة
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-chart-bar"></i> إنشاء التقرير
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.report-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.report-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.report-icon {
+    padding: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.05);
+    display: inline-block;
+}
+
+.stats-box {
+    transition: transform 0.3s ease;
+}
+
+.stats-box:hover {
+    transform: scale(1.05);
+}
+
+.text-purple {
+    color: #6f42c1 !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// إظهار/إخفاء حقول التاريخ المخصص
+document.getElementById('date_range').addEventListener('change', function() {
+    const customDateRange = document.getElementById('custom_date_range');
+    if (this.value === 'custom') {
+        customDateRange.style.display = 'block';
+    } else {
+        customDateRange.style.display = 'none';
+    }
+});
+
+// وظائف تصدير التقارير
+function exportAssetsReport(format) {
+    window.open(`/reports/assets/export?format=${format}`, '_blank');
+}
+
+function exportMaintenanceReport(format) {
+    window.open(`/reports/maintenance/export?format=${format}`, '_blank');
+}
+
+function exportFinancialReport(format) {
+    window.open(`/reports/financial/export?format=${format}`, '_blank');
+}
+
+function exportLocationReport(format) {
+    window.open(`/reports/location/export?format=${format}`, '_blank');
+}
+
+function exportAssignmentReport(format) {
+    window.open(`/reports/assignment/export?format=${format}`, '_blank');
+}
+
+// إرسال نموذج التقرير المخصص
+document.getElementById('customReportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const params = new URLSearchParams();
+    
+    for (let [key, value] of formData.entries()) {
+        params.append(key, value);
+    }
+    
+    const format = formData.get('format');
+    if (format === 'html') {
+        window.open(`/reports/custom?${params.toString()}`, '_blank');
+    } else {
+        window.open(`/reports/custom/export?${params.toString()}`, '_blank');
+    }
+    
+    // إغلاق النافذة المنبثقة
+    const modal = bootstrap.Modal.getInstance(document.getElementById('customReportModal'));
+    modal.hide();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}تقرير الصيانة - نظام إدارة الأصول التقنية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="page-title">
+                    <i class="fas fa-chart-line"></i> تقرير الصيانة
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('reports_index') }}">التقارير</a></li>
+                        <li class="breadcrumb-item active">تقرير الصيانة</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> طباعة التقرير
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- إحصائيات سريعة -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ total_maintenance }}</h3>
+                <p><i class="fas fa-tools"></i> إجمالي أعمال الصيانة</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ completed_maintenance }}</h3>
+                <p><i class="fas fa-check-circle"></i> الصيانة المكتملة</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ "%.2f"|format(total_cost or 0) }}</h3>
+                <p><i class="fas fa-dollar-sign"></i> إجمالي التكلفة (ريال)</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ maintenance_by_type|length }}</h3>
+                <p><i class="fas fa-list"></i> أنواع الصيانة</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- الصيانة حسب النوع -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie"></i> الصيانة حسب النوع
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if maintenance_by_type %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>نوع الصيانة</th>
+                                    <th>العدد</th>
+                                    <th>النسبة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for type_data in maintenance_by_type %}
+                                <tr>
+                                    <td>
+                                        {% if type_data[0] == 'preventive' %}
+                                            <span class="badge bg-success">وقائية</span>
+                                        {% elif type_data[0] == 'corrective' %}
+                                            <span class="badge bg-warning">تصحيحية</span>
+                                        {% elif type_data[0] == 'emergency' %}
+                                            <span class="badge bg-danger">طارئة</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ type_data[0] }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>{{ type_data[1] }}</strong></td>
+                                    <td>{{ "%.1f"|format((type_data[1] / total_maintenance * 100) if total_maintenance > 0 else 0) }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-chart-pie fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">لا توجد بيانات للعرض</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- الأصول الأكثر صيانة -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> الأصول الأكثر صيانة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if assets_maintenance_count %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>اسم الأصل</th>
+                                    <th>رقم الأصل</th>
+                                    <th>عدد مرات الصيانة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset_data in assets_maintenance_count %}
+                                <tr>
+                                    <td>{{ asset_data[0] }}</td>
+                                    <td><code>{{ asset_data[1] }}</code></td>
+                                    <td>
+                                        <span class="badge bg-warning">{{ asset_data[2] }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-tools fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">لا توجد بيانات للعرض</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- سجل الصيانة التفصيلي -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list"></i> سجل الصيانة التفصيلي
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if maintenance_records %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الأصل</th>
+                            <th>نوع الصيانة</th>
+                            <th>الوصف</th>
+                            <th>الفني</th>
+                            <th>التكلفة</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in maintenance_records %}
+                        <tr>
+                            <td>{{ record.maintenance_date.strftime('%Y-%m-%d') if record.maintenance_date else '-' }}</td>
+                            <td>
+                                {% if record.asset %}
+                                    <strong>{{ record.asset.name }}</strong><br>
+                                    <small class="text-muted">{{ record.asset.asset_tag }}</small>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.maintenance_type == 'preventive' %}
+                                    <span class="badge bg-success">وقائية</span>
+                                {% elif record.maintenance_type == 'corrective' %}
+                                    <span class="badge bg-warning">تصحيحية</span>
+                                {% elif record.maintenance_type == 'emergency' %}
+                                    <span class="badge bg-danger">طارئة</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ record.maintenance_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ record.description[:50] }}{% if record.description|length > 50 %}...{% endif %}</td>
+                            <td>{{ record.technician or '-' }}</td>
+                            <td>
+                                {% if record.cost %}
+                                    {{ "%.2f"|format(record.cost) }} ريال
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.status == 'completed' %}
+                                    <span class="badge bg-success">مكتملة</span>
+                                {% elif record.status == 'in_progress' %}
+                                    <span class="badge bg-warning">قيد التنفيذ</span>
+                                {% elif record.status == 'scheduled' %}
+                                    <span class="badge bg-info">مجدولة</span>
+                                {% elif record.status == 'cancelled' %}
+                                    <span class="badge bg-danger">ملغية</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ record.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد سجلات صيانة</h5>
+                <p class="text-muted">ابدأ بإضافة سجلات الصيانة لعرض التقرير</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .page-header, .navbar, .sidebar, .btn {
+        display: none !important;
+    }
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}

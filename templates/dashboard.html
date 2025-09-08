@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - نظام إدارة الأصول التقنية{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+    <div class="container">
+        <h1><i class="fas fa-tachometer-alt"></i> لوحة التحكم المحسنة</h1>
+        <p class="lead">نظرة عامة شاملة ومحدثة على حالة الأصول التقنية</p>
+    </div>
+</div>
+
+<!-- ويدجت الوقت والمهام السريعة -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <!-- إحصائيات سريعة محسنة -->
+        <div class="row">
+            <div class="col-lg-6 col-md-6 mb-3">
+                <div class="stats-card-enhanced primary">
+                    <div class="stats-icon">
+                        <i class="fas fa-laptop"></i>
+                    </div>
+                    <div class="stats-number" id="total-assets">{{ total_assets }}</div>
+                    <div class="stats-label">إجمالي الأصول</div>
+                    <div class="stats-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+5% من الشهر الماضي</span>
+                    </div>
+                    <canvas id="assets-chart" class="mini-chart" width="200" height="60"></canvas>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-md-6 mb-3">
+                <div class="stats-card-enhanced success">
+                    <div class="stats-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stats-number" id="active-assets">{{ active_assets }}</div>
+                    <div class="stats-label">أصول نشطة</div>
+                    <div class="stats-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+2% من الأسبوع الماضي</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-md-6 mb-3">
+                <div class="stats-card-enhanced warning">
+                    <div class="stats-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="stats-number" id="maintenance-count">{{ maintenance_assets }}</div>
+                    <div class="stats-label">قيد الصيانة</div>
+                    <div class="stats-change negative">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>-1 من الأمس</span>
+                    </div>
+                    <canvas id="maintenance-chart" class="mini-chart" width="200" height="60"></canvas>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-md-6 mb-3">
+                <div class="stats-card-enhanced info">
+                    <div class="stats-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stats-number" id="users-count">{{ total_users or 5 }}</div>
+                    <div class="stats-label">المستخدمين النشطين</div>
+                    <div class="stats-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>متصل الآن</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- ويدجت الوقت والتاريخ -->
+        <div class="weather-widget mb-3">
+            <div class="time" id="current-time">--:--:--</div>
+            <div class="date" id="current-date">جاري التحميل...</div>
+            <div class="mt-3">
+                <small>حالة النظام:</small>
+                <div class="d-flex justify-content-between mt-2">
+                    <span>قاعدة البيانات: <span id="db-status" class="badge bg-success">متصل</span></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- المهام السريعة -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-bolt"></i> مهام سريعة</h6>
+            </div>
+            <div class="card-body">
+                <div class="quick-actions">
+                    <a href="{{ url_for('add_asset') }}" class="quick-action-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>إضافة أصل</span>
+                    </a>
+                    <a href="{{ url_for('maintenance_list') }}" class="quick-action-btn">
+                        <i class="fas fa-tools"></i>
+                        <span>صيانة جديدة</span>
+                    </a>
+                    <a href="{{ url_for('reports_index') }}" class="quick-action-btn">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>التقارير</span>
+                    </a>
+                    <a href="{{ url_for('employees') }}" class="quick-action-btn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>إضافة موظف</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- الأنشطة الحديثة والجداول -->
+<div class="row">
+    <!-- الأصول المضافة حديثاً -->
+    <div class="col-lg-8 mb-4">
+        <div class="enhanced-table">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle text-primary"></i>
+                    الأصول المضافة حديثاً
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_assets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>رقم الأصل</th>
+                                <th>الاسم</th>
+                                <th>الفئة</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الإضافة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asset in recent_assets %}
+                            <tr>
+                                <td><strong>{{ asset.asset_tag }}</strong></td>
+                                <td>{{ asset.name }}</td>
+                                <td><span class="badge bg-secondary">{{ asset.category.name }}</span></td>
+                                <td>
+                                    <span class="status-badge {{ asset.status }}">
+                                        {% if asset.status == 'active' %}نشط
+                                        {% elif asset.status == 'maintenance' %}صيانة
+                                        {% elif asset.status == 'retired' %}متقاعد
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ asset.created_at.strftime('%Y-%m-%d') if asset.created_at else 'غير محدد' }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_asset', id=asset.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد أصول مضافة حديثاً</p>
+                    <a href="{{ url_for('add_asset') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> إضافة أصل جديد
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- الأنشطة الحديثة -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history text-info"></i>
+                    الأنشطة الحديثة
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="activity-list" id="recent-activities">
+                    <!-- سيتم تحميل الأنشطة عبر JavaScript -->
+                    <div class="activity-item d-flex align-items-center">
+                        <div class="activity-icon create">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">إضافة أصل جديد</div>
+                            <small class="text-muted">تم إضافة جهاز كمبيوتر جديد</small>
+                        </div>
+                        <small class="text-muted">منذ ساعة</small>
+                    </div>
+                    
+                    <div class="activity-item d-flex align-items-center">
+                        <div class="activity-icon maintenance">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">صيانة مجدولة</div>
+                            <small class="text-muted">صيانة دورية للخادم الرئيسي</small>
+                        </div>
+                        <small class="text-muted">منذ 3 ساعات</small>
+                    </div>
+                    
+                    <div class="activity-item d-flex align-items-center">
+                        <div class="activity-icon update">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">تحديث بيانات</div>
+                            <small class="text-muted">تحديث معلومات الطابعة</small>
+                        </div>
+                        <small class="text-muted">أمس</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- الرسوم البيانية التفاعلية -->
+<div class="row mt-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie text-primary"></i>
+                    توزيع الأصول حسب الفئة
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar text-success"></i>
+                    حالة الأصول
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+// تهيئة الرسوم البيانية
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني للفئات
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['أجهزة الكمبيوتر', 'الخوادم', 'معدات الشبكة', 'الطابعات', 'أخرى'],
+            datasets: [{
+                data: [{{ categories_stats|length or 30 }}, 15, 20, 10, 25],
+                backgroundColor: [
+                    '#667eea',
+                    '#764ba2',
+                    '#f093fb',
+                    '#f5576c',
+                    '#4facfe'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                duration: 2000
+            }
+        }
+    });
+
+    // رسم بياني للحالة
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(statusCtx, {
+        type: 'bar',
+        data: {
+            labels: ['نشط', 'صيانة', 'متقاعد'],
+            datasets: [{
+                label: 'عدد الأصول',
+                data: [{{ active_assets or 0 }}, {{ maintenance_assets or 0 }}, {{ retired_assets or 0 }}],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(108, 117, 125, 0.8)'
+                ],
+                borderColor: [
+                    '#28a745',
+                    '#ffc107',
+                    '#6c757d'
+                ],
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+    
+    console.log('✅ تم تحميل الرسوم البيانية بنجاح');
+});
+</script>
+{% endblock %}

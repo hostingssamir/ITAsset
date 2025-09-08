@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}سجل الصيانة - نظام إدارة الأصول التقنية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1><i class="fas fa-tools"></i> سجل الصيانة</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                        <li class="breadcrumb-item active">الصيانة</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addMaintenanceModal">
+                    <i class="fas fa-plus"></i> إضافة صيانة جديدة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- فلاتر البحث -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label">البحث</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ request.args.get('search', '') }}" 
+                       placeholder="البحث في الوصف أو رقم الأصل">
+            </div>
+            <div class="col-md-2">
+                <label for="maintenance_type" class="form-label">نوع الصيانة</label>
+                <select class="form-select" id="maintenance_type" name="maintenance_type">
+                    <option value="">جميع الأنواع</option>
+                    <option value="preventive" {{ 'selected' if request.args.get('maintenance_type') == 'preventive' }}>وقائية</option>
+                    <option value="corrective" {{ 'selected' if request.args.get('maintenance_type') == 'corrective' }}>إصلاحية</option>
+                    <option value="emergency" {{ 'selected' if request.args.get('maintenance_type') == 'emergency' }}>طارئة</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="status" class="form-label">الحالة</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">جميع الحالات</option>
+                    <option value="scheduled" {{ 'selected' if request.args.get('status') == 'scheduled' }}>مجدولة</option>
+                    <option value="in_progress" {{ 'selected' if request.args.get('status') == 'in_progress' }}>قيد التنفيذ</option>
+                    <option value="completed" {{ 'selected' if request.args.get('status') == 'completed' }}>مكتملة</option>
+                    <option value="cancelled" {{ 'selected' if request.args.get('status') == 'cancelled' }}>ملغية</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">من تاريخ</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" 
+                       value="{{ request.args.get('date_from', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">إلى تاريخ</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" 
+                       value="{{ request.args.get('date_to', '') }}">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>{{ completed_count }}</h3>
+                    <p>صيانة مكتملة</p>
+                </div>
+                <i class="fas fa-check-circle fa-3x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>{{ in_progress_count }}</h3>
+                    <p>قيد التنفيذ</p>
+                </div>
+                <i class="fas fa-cog fa-spin fa-3x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>{{ scheduled_count }}</h3>
+                    <p>مجدولة</p>
+                </div>
+                <i class="fas fa-calendar-alt fa-3x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>{{ overdue_count }}</h3>
+                    <p>متأخرة</p>
+                </div>
+                <i class="fas fa-exclamation-triangle fa-3x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول الصيانة -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i>
+            سجل الصيانة ({{ maintenance_records.total if maintenance_records else 0 }} عملية)
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if maintenance_records and maintenance_records.items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>الأصل</th>
+                        <th>نوع الصيانة</th>
+                        <th>الوصف</th>
+                        <th>التاريخ</th>
+                        <th>الفني</th>
+                        <th>التكلفة</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in maintenance_records.items %}
+                    <tr>
+                        <td>
+                            <div>
+                                <strong>{{ record.asset.name }}</strong>
+                                <br><small class="text-muted">{{ record.asset.asset_tag }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if record.maintenance_type == 'preventive' %}bg-info
+                                {% elif record.maintenance_type == 'corrective' %}bg-warning text-dark
+                                {% elif record.maintenance_type == 'emergency' %}bg-danger
+                                {% endif %}">
+                                {% if record.maintenance_type == 'preventive' %}وقائية
+                                {% elif record.maintenance_type == 'corrective' %}إصلاحية
+                                {% elif record.maintenance_type == 'emergency' %}طارئة
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div title="{{ record.description }}">
+                                {{ record.description[:50] }}{% if record.description|length > 50 %}...{% endif %}
+                            </div>
+                        </td>
+                        <td>{{ record.maintenance_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ record.technician or 'غير محدد' }}</td>
+                        <td>
+                            {% if record.cost %}
+                            <span class="text-success">{{ "{:,.2f}".format(record.cost) }} ريال</span>
+                            {% else %}
+                            <span class="text-muted">غير محدد</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if record.status == 'completed' %}bg-success
+                                {% elif record.status == 'in_progress' %}bg-warning text-dark
+                                {% elif record.status == 'scheduled' %}bg-info
+                                {% elif record.status == 'cancelled' %}bg-secondary
+                                {% endif %}">
+                                {% if record.status == 'completed' %}مكتملة
+                                {% elif record.status == 'in_progress' %}قيد التنفيذ
+                                {% elif record.status == 'scheduled' %}مجدولة
+                                {% elif record.status == 'cancelled' %}ملغية
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="viewMaintenance({{ record.id }})" title="عرض التفاصيل">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning" 
+                                        onclick="editMaintenance({{ record.id }})" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if record.status != 'completed' %}
+                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                        onclick="completeMaintenance({{ record.id }})" title="إكمال">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if maintenance_records.pages > 1 %}
+        <nav aria-label="تنقل الصفحات" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if maintenance_records.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('maintenance_list', page=maintenance_records.prev_num, **request.args) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in maintenance_records.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != maintenance_records.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('maintenance_list', page=page_num, **request.args) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if maintenance_records.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('maintenance_list', page=maintenance_records.next_num, **request.args) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد سجلات صيانة</h5>
+            <p class="text-muted">ابدأ بإضافة أول عملية صيانة</p>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMaintenanceModal">
+                <i class="fas fa-plus"></i> إضافة صيانة جديدة
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal إضافة صيانة -->
+<div class="modal fade" id="addMaintenanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة صيانة جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addMaintenanceForm" method="POST" action="{{ url_for('add_maintenance') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="asset_id" class="form-label">الأصل <span class="text-danger">*</span></label>
+                            <select class="form-select" id="asset_id" name="asset_id" required>
+                                <option value="">اختر الأصل</option>
+                                {% for asset in assets %}
+                                <option value="{{ asset.id }}">{{ asset.name }} ({{ asset.asset_tag }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="maintenance_type" class="form-label">نوع الصيانة <span class="text-danger">*</span></label>
+                            <select class="form-select" id="maintenance_type" name="maintenance_type" required>
+                                <option value="">اختر النوع</option>
+                                <option value="preventive">صيانة وقائية</option>
+                                <option value="corrective">صيانة إصلاحية</option>
+                                <option value="emergency">صيانة طارئة</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">وصف الصيانة <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="maintenance_date" class="form-label">تاريخ الصيانة</label>
+                            <input type="datetime-local" class="form-control" id="maintenance_date" name="maintenance_date">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="technician" class="form-label">الفني المسؤول</label>
+                            <input type="text" class="form-control" id="technician" name="technician">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="cost" class="form-label">التكلفة (ريال)</label>
+                            <input type="number" class="form-control" id="cost" name="cost" step="0.01" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">الحالة</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="scheduled">مجدولة</option>
+                                <option value="in_progress">قيد التنفيذ</option>
+                                <option value="completed">مكتملة</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="next_maintenance" class="form-label">الصيانة القادمة</label>
+                            <input type="date" class="form-control" id="next_maintenance" name="next_maintenance">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">ملاحظات</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الصيانة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewMaintenance(id) {
+    // عرض تفاصيل الصيانة
+    window.location.href = `/maintenance/${id}`;
+}
+
+function editMaintenance(id) {
+    // تعديل الصيانة
+    window.location.href = `/maintenance/${id}/edit`;
+}
+
+function completeMaintenance(id) {
+    if (confirm('هل أنت متأكد من إكمال هذه الصيانة؟')) {
+        fetch(`/maintenance/${id}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('حدث خطأ أثناء إكمال الصيانة');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ أثناء إكمال الصيانة');
+        });
+    }
+}
+
+// تحديث الصفحة عند تغيير الفلاتر
+document.getElementById('maintenance_type').addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.getElementById('status').addEventListener('change', function() {
+    this.form.submit();
+});
+
+// تعيين التاريخ الحالي كافتراضي
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const dateTimeString = now.toISOString().slice(0, 16);
+    document.getElementById('maintenance_date').value = dateTimeString;
+});
+</script>
+{% endblock %}

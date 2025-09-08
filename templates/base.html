@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام إدارة الأصول التقنية{% endblock %}</title>
+    
+    <!-- Bootstrap RTL CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts Arabic -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- نظام الإشعارات -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            margin: 5px 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255,255,255,0.2);
+            transform: translateX(-5px);
+        }
+        
+        .sidebar .nav-link i {
+            margin-left: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .badge {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        
+        .status-active { background-color: #28a745; }
+        .status-maintenance { background-color: #ffc107; color: #000; }
+        .status-retired { background-color: #6c757d; }
+        .status-lost { background-color: #dc3545; }
+        
+        .condition-excellent { background-color: #28a745; }
+        .condition-good { background-color: #17a2b8; }
+        .condition-fair { background-color: #ffc107; color: #000; }
+        .condition-poor { background-color: #dc3545; }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-card h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stats-card p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-radius: 15px;
+        }
+        
+        .breadcrumb {
+            background: transparent;
+            margin: 0;
+        }
+        
+        .breadcrumb-item a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item.active {
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                right: -250px;
+                width: 250px;
+                height: 100vh;
+                z-index: 1000;
+                transition: right 0.3s ease;
+            }
+            
+            .sidebar.show {
+                right: 0;
+            }
+            
+            .main-content {
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-laptop"></i> نظام إدارة الأصول التقنية
+            </a>
+            <div class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i> {{ current_user.full_name }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog"></i> الملف الشخصي</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            {% if current_user.is_authenticated %}
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint == 'index' }}" href="{{ url_for('index') }}">
+                                <i class="fas fa-tachometer-alt"></i>
+                                لوحة التحكم
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if 'assets' in request.endpoint }}" href="{{ url_for('assets') }}">
+                                <i class="fas fa-laptop"></i>
+                                الأصول
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if 'maintenance' in request.endpoint }}" href="{{ url_for('maintenance_list') }}">
+                                <i class="fas fa-tools"></i>
+                                الصيانة
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if 'employees' in request.endpoint }}" href="{{ url_for('employees') }}">
+                                <i class="fas fa-users"></i>
+                                الموظفين
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if 'locations' in request.endpoint }}" href="{{ url_for('locations') }}">
+                                <i class="fas fa-map-marker-alt"></i>
+                                المواقع
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if 'suppliers' in request.endpoint }}" href="{{ url_for('suppliers') }}">
+                                <i class="fas fa-truck"></i>
+                                الموردين
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
+                                <i class="fas fa-chart-bar"></i>
+                                التقارير
+                                <i class="fas fa-chevron-down float-end"></i>
+                            </a>
+                            <div class="collapse" id="reportsMenu">
+                                <ul class="nav flex-column ms-3">
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{{ url_for('reports_assets') }}">
+                                            <i class="fas fa-file-pdf"></i>
+                                            تقرير الأصول
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{{ url_for('reports_maintenance') }}">
+                                            <i class="fas fa-file-excel"></i>
+                                            تقرير الصيانة
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        {% if current_user.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#adminMenu">
+                                <i class="fas fa-cog"></i>
+                                الإدارة
+                                <i class="fas fa-chevron-down float-end"></i>
+                            </a>
+                            <div class="collapse" id="adminMenu">
+                                <ul class="nav flex-column ms-3">
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{{ url_for('admin.users') }}">
+                                            <i class="fas fa-users-cog"></i>
+                                            المستخدمين
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{{ url_for('admin.categories') }}">
+                                            <i class="fas fa-tags"></i>
+                                            الفئات
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{{ url_for('admin.backup') }}">
+                                            <i class="fas fa-database"></i>
+                                            النسخ الاحتياطي
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </nav>
+            {% endif %}
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- نظام الإشعارات -->
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

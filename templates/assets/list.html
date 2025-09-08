@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}قائمة الأصول - نظام إدارة الأصول التقنية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1><i class="fas fa-laptop"></i> إدارة الأصول</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                        <li class="breadcrumb-item active">الأصول</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('add_asset') }}" class="btn btn-light">
+                    <i class="fas fa-plus"></i> إضافة أصل جديد
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- فلاتر البحث -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">البحث</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ request.args.get('search', '') }}" 
+                       placeholder="البحث في الاسم، رقم الأصل، أو الرقم التسلسلي">
+            </div>
+            <div class="col-md-3">
+                <label for="category" class="form-label">الفئة</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">جميع الفئات</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" 
+                            {{ 'selected' if request.args.get('category', type=int) == category.id }}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">الحالة</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">جميع الحالات</option>
+                    <option value="active" {{ 'selected' if request.args.get('status') == 'active' }}>نشط</option>
+                    <option value="maintenance" {{ 'selected' if request.args.get('status') == 'maintenance' }}>صيانة</option>
+                    <option value="retired" {{ 'selected' if request.args.get('status') == 'retired' }}>متقاعد</option>
+                    <option value="lost" {{ 'selected' if request.args.get('status') == 'lost' }}>مفقود</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> بحث
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- قائمة الأصول -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i>
+            قائمة الأصول ({{ assets.total }} أصل)
+        </h5>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleView('table')">
+                <i class="fas fa-table"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleView('grid')">
+                <i class="fas fa-th"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if assets.items %}
+        <!-- عرض الجدول -->
+        <div id="tableView" class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>الصورة</th>
+                        <th>رقم الأصل</th>
+                        <th>الاسم</th>
+                        <th>الفئة</th>
+                        <th>الموقع</th>
+                        <th>الحالة</th>
+                        <th>الحالة الفنية</th>
+                        <th>تاريخ الشراء</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asset in assets.items %}
+                    <tr>
+                        <td>
+                            {% if asset.image_path %}
+                            <img src="{{ url_for('static', filename='uploads/' + asset.image_path) }}" 
+                                 class="rounded" width="50" height="50" style="object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-image text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong class="text-primary">{{ asset.asset_tag }}</strong>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ asset.name }}</strong>
+                                {% if asset.brand or asset.model %}
+                                <br><small class="text-muted">
+                                    {{ asset.brand }} {{ asset.model }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ asset.category.name }}</span>
+                        </td>
+                        <td>
+                            {% if asset.location %}
+                            <small>{{ asset.location.name }}</small>
+                            {% else %}
+                            <span class="text-muted">غير محدد</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge status-{{ asset.status }}">
+                                {% if asset.status == 'active' %}نشط
+                                {% elif asset.status == 'maintenance' %}صيانة
+                                {% elif asset.status == 'retired' %}متقاعد
+                                {% elif asset.status == 'lost' %}مفقود
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge condition-{{ asset.condition }}">
+                                {% if asset.condition == 'excellent' %}ممتاز
+                                {% elif asset.condition == 'good' %}جيد
+                                {% elif asset.condition == 'fair' %}مقبول
+                                {% elif asset.condition == 'poor' %}ضعيف
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if asset.purchase_date %}
+                            {{ asset.purchase_date.strftime('%Y-%m-%d') }}
+                            {% else %}
+                            <span class="text-muted">غير محدد</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('view_asset', id=asset.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" title="عرض التفاصيل">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="#" class="btn btn-sm btn-outline-warning" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('asset_qr', id=asset.id) }}" 
+                                   class="btn btn-sm btn-outline-success" title="QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        title="حذف" onclick="confirmDelete({{ asset.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- عرض الشبكة -->
+        <div id="gridView" class="row" style="display: none;">
+            {% for asset in assets.items %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100">
+                    {% if asset.image_path %}
+                    <img src="{{ url_for('static', filename='uploads/' + asset.image_path) }}" 
+                         class="card-img-top" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                         style="height: 200px;">
+                        <i class="fas fa-laptop fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <h6 class="card-title">{{ asset.name }}</h6>
+                        <p class="card-text">
+                            <strong class="text-primary">{{ asset.asset_tag }}</strong><br>
+                            <small class="text-muted">{{ asset.category.name }}</small>
+                        </p>
+                        
+                        <div class="mb-2">
+                            <span class="badge status-{{ asset.status }} me-1">
+                                {% if asset.status == 'active' %}نشط
+                                {% elif asset.status == 'maintenance' %}صيانة
+                                {% elif asset.status == 'retired' %}متقاعد
+                                {% elif asset.status == 'lost' %}مفقود
+                                {% endif %}
+                            </span>
+                            <span class="badge condition-{{ asset.condition }}">
+                                {% if asset.condition == 'excellent' %}ممتاز
+                                {% elif asset.condition == 'good' %}جيد
+                                {% elif asset.condition == 'fair' %}مقبول
+                                {% elif asset.condition == 'poor' %}ضعيف
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{{ url_for('view_asset', id=asset.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="#" class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('asset_qr', id=asset.id) }}" 
+                               class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-qrcode"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if assets.pages > 1 %}
+        <nav aria-label="تنقل الصفحات" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if assets.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('assets', page=assets.prev_num, **request.args) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in assets.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != assets.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('assets', page=page_num, **request.args) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if assets.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('assets', page=assets.next_num, **request.args) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد أصول تطابق معايير البحث</h5>
+            <p class="text-muted">جرب تغيير معايير البحث أو إضافة أصول جديدة</p>
+            <a href="{{ url_for('add_asset') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> إضافة أصل جديد
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleView(viewType) {
+    const tableView = document.getElementById('tableView');
+    const gridView = document.getElementById('gridView');
+    
+    if (viewType === 'table') {
+        tableView.style.display = 'block';
+        gridView.style.display = 'none';
+    } else {
+        tableView.style.display = 'none';
+        gridView.style.display = 'block';
+    }
+}
+
+function confirmDelete(assetId) {
+    if (confirm('هل أنت متأكد من حذف هذا الأصل؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        // إرسال طلب الحذف
+        fetch(`/assets/${assetId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('حدث خطأ أثناء الحذف');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ أثناء الحذف');
+        });
+    }
+}
+
+// تحديث الصفحة عند تغيير الفلاتر
+document.getElementById('category').addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.getElementById('status').addEventListener('change', function() {
+    this.form.submit();
+});
+</script>
+{% endblock %}

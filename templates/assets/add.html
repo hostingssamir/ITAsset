@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة أصل جديد - نظام إدارة الأصول التقنية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-plus-circle"></i> إضافة أصل جديد</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('assets') }}">الأصول</a></li>
+                <li class="breadcrumb-item active">إضافة أصل جديد</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+    <div class="row">
+        <!-- المعلومات الأساسية -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        المعلومات الأساسية
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="asset_tag" class="form-label">رقم الأصل <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="asset_tag" name="asset_tag" required>
+                            <div class="form-text">رقم فريد لتعريف الأصل</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">اسم الأصل <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">الوصف</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="category_id" class="form-label">الفئة <span class="text-danger">*</span></label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                <option value="">اختر الفئة</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="location_id" class="form-label">الموقع</label>
+                            <select class="form-select" id="location_id" name="location_id">
+                                <option value="">اختر الموقع</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}">{{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="supplier_id" class="form-label">المورد</label>
+                            <select class="form-select" id="supplier_id" name="supplier_id">
+                                <option value="">اختر المورد</option>
+                                {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- تفاصيل الجهاز -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cog"></i>
+                        تفاصيل الجهاز
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="brand" class="form-label">العلامة التجارية</label>
+                            <input type="text" class="form-control" id="brand" name="brand">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="model" class="form-label">الموديل</label>
+                            <input type="text" class="form-control" id="model" name="model">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="serial_number" class="form-label">الرقم التسلسلي</label>
+                            <input type="text" class="form-control" id="serial_number" name="serial_number">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="specifications" class="form-label">المواصفات التقنية</label>
+                        <textarea class="form-control" id="specifications" name="specifications" rows="4" 
+                                  placeholder="مثال: معالج Intel i7، ذاكرة 16GB، قرص صلب 512GB SSD"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- المعلومات المالية -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-dollar-sign"></i>
+                        المعلومات المالية
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="purchase_date" class="form-label">تاريخ الشراء</label>
+                            <input type="date" class="form-control" id="purchase_date" name="purchase_date">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="purchase_cost" class="form-label">تكلفة الشراء</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="purchase_cost" name="purchase_cost" 
+                                       step="0.01" min="0">
+                                <span class="input-group-text">ريال</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="warranty_expiry" class="form-label">انتهاء الضمان</label>
+                            <input type="date" class="form-control" id="warranty_expiry" name="warranty_expiry">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ملاحظات إضافية -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sticky-note"></i>
+                        ملاحظات إضافية
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">الملاحظات</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الحالة والصورة -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info"></i>
+                        الحالة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">حالة الأصل</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="active" selected>نشط</option>
+                            <option value="maintenance">قيد الصيانة</option>
+                            <option value="retired">متقاعد</option>
+                            <option value="lost">مفقود</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="condition" class="form-label">الحالة الفنية</label>
+                        <select class="form-select" id="condition" name="condition">
+                            <option value="excellent">ممتاز</option>
+                            <option value="good" selected>جيد</option>
+                            <option value="fair">مقبول</option>
+                            <option value="poor">ضعيف</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-image"></i>
+                        صورة الأصل
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="image" class="form-label">رفع صورة</label>
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                        <div class="form-text">الحد الأقصى: 5MB، الصيغ المدعومة: JPG, PNG, GIF</div>
+                    </div>
+                    
+                    <div id="imagePreview" class="text-center" style="display: none;">
+                        <img id="previewImg" src="" class="img-fluid rounded" style="max-height: 200px;">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- معاينة QR Code -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-qrcode"></i>
+                        معاينة QR Code
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="qrPreview" class="mb-3">
+                        <i class="fas fa-qrcode fa-3x text-muted"></i>
+                        <p class="text-muted mt-2">سيتم إنشاء QR Code بعد الحفظ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- أزرار الحفظ -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> حفظ الأصل
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-lg ms-2" onclick="resetForm()">
+                                <i class="fas fa-undo"></i> إعادة تعيين
+                            </button>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('assets') }}" class="btn btn-outline-danger btn-lg">
+                                <i class="fas fa-times"></i> إلغاء
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// معاينة الصورة
+document.getElementById('image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+});
+
+// إنشاء رقم أصل تلقائي
+document.addEventListener('DOMContentLoaded', function() {
+    const assetTagInput = document.getElementById('asset_tag');
+    const categorySelect = document.getElementById('category_id');
+    
+    function generateAssetTag() {
+        const category = categorySelect.value;
+        if (category && !assetTagInput.value) {
+            const categoryMap = {
+                '1': 'PC',
+                '2': 'SRV',
+                '3': 'NET',
+                '4': 'PRT',
+                '5': 'PHN',
+                '6': 'OTH'
+            };
+            const prefix = categoryMap[category] || 'AST';
+            const timestamp = Date.now().toString().slice(-6);
+            assetTagInput.value = `${prefix}-${timestamp}`;
+        }
+    }
+    
+    categorySelect.addEventListener('change', generateAssetTag);
+});
+
+// إعادة تعيين النموذج
+function resetForm() {
+    if (confirm('هل أنت متأكد من إعادة تعيين جميع البيانات؟')) {
+        document.querySelector('form').reset();
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+}
+
+// التحقق من صحة النموذج
+document.querySelector('form').addEventListener('submit', function(e) {
+    const assetTag = document.getElementById('asset_tag').value;
+    const name = document.getElementById('name').value;
+    const category = document.getElementById('category_id').value;
+    
+    if (!assetTag || !name || !category) {
+        e.preventDefault();
+        alert('يرجى ملء جميع الحقول المطلوبة');
+        return false;
+    }
+    
+    // التحقق من صيغة رقم الأصل
+    const assetTagPattern = /^[A-Z]{2,4}-\d{4,8}$/;
+    if (!assetTagPattern.test(assetTag)) {
+        e.preventDefault();
+        alert('صيغة رقم الأصل غير صحيحة. يجب أن تكون مثل: PC-123456');
+        return false;
+    }
+});
+
+// حفظ البيانات محلياً أثناء الكتابة
+function saveFormData() {
+    const formData = new FormData(document.querySelector('form'));
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'image') { // لا نحفظ الصورة محلياً
+            data[key] = value;
+        }
+    }
+    localStorage.setItem('assetFormData', JSON.stringify(data));
+}
+
+// استرجاع البيانات المحفوظة
+function loadFormData() {
+    const savedData = localStorage.getItem('assetFormData');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        for (let [key, value] of Object.entries(data)) {
+            const element = document.querySelector(`[name="${key}"]`);
+            if (element) {
+                element.value = value;
+            }
+        }
+    }
+}
+
+// حفظ البيانات عند تغيير أي حقل
+document.querySelectorAll('input, select, textarea').forEach(element => {
+    element.addEventListener('change', saveFormData);
+});
+
+// تحميل البيانات عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', loadFormData);
+
+// مسح البيانات المحفوظة عند الإرسال الناجح
+document.querySelector('form').addEventListener('submit', function() {
+    localStorage.removeItem('assetFormData');
+});
+</script>
+{% endblock %}

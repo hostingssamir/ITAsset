@@ -1,0 +1,308 @@
+/* لوحة التحكم المحسنة */
+
+/* بطاقات الإحصائيات المحسنة */
+.stats-card-enhanced {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 25px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card-enhanced:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+
+.stats-card-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.stats-card-enhanced .stats-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.stats-card-enhanced .stats-label {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 15px;
+}
+
+.stats-card-enhanced .stats-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+.stats-card-enhanced .stats-change {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stats-change.positive {
+    color: #4ade80;
+}
+
+.stats-change.negative {
+    color: #f87171;
+}
+
+/* ألوان مختلفة للبطاقات */
+.stats-card-enhanced.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stats-card-enhanced.success {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+}
+
+.stats-card-enhanced.warning {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.stats-card-enhanced.danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.stats-card-enhanced.info {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+/* الرسوم البيانية الصغيرة */
+.mini-chart {
+    height: 60px;
+    margin-top: 15px;
+}
+
+/* قائمة الأنشطة الحديثة */
+.activity-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    padding: 15px;
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease;
+}
+
+.activity-item:hover {
+    background-color: #f9fafb;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 1.2rem;
+}
+
+.activity-icon.create {
+    background-color: #dcfce7;
+    color: #16a34a;
+}
+
+.activity-icon.update {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.activity-icon.delete {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.activity-icon.maintenance {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+/* ويدجت الطقس والوقت */
+.weather-widget {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+    text-align: center;
+}
+
+.weather-widget .time {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.weather-widget .date {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* ويدجت المهام السريعة */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.quick-action-btn {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px 15px;
+    text-align: center;
+    text-decoration: none;
+    color: #374151;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.quick-action-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
+    text-decoration: none;
+}
+
+.quick-action-btn i {
+    font-size: 2rem;
+}
+
+.quick-action-btn span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* تحسينات الجداول */
+.enhanced-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.enhanced-table .table {
+    margin-bottom: 0;
+}
+
+.enhanced-table .table thead th {
+    background-color: #f8fafc;
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 600;
+    color: #374151;
+    padding: 15px;
+}
+
+.enhanced-table .table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.enhanced-table .table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* شارات الحالة المحسنة */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.maintenance {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.retired {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+/* تحسينات الاستجابة */
+@media (max-width: 768px) {
+    .stats-card-enhanced {
+        margin-bottom: 20px;
+    }
+    
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-card-enhanced .stats-number {
+        font-size: 2rem;
+    }
+    
+    .stats-card-enhanced .stats-icon {
+        font-size: 2.5rem;
+    }
+}
+
+/* تأثيرات التحميل */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* تحسينات الطباعة */
+@media print {
+    .stats-card-enhanced {
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    .quick-actions,
+    .weather-widget {
+        display: none !important;
+    }
+}

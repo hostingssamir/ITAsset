@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}النسخ الاحتياطي - نظام إدارة الأصول التقنية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="page-title">
+                    <i class="fas fa-database"></i> النسخ الاحتياطي
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                        <li class="breadcrumb-item">الإدارة</li>
+                        <li class="breadcrumb-item active">النسخ الاحتياطي</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- إنشاء نسخة احتياطية -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus-circle"></i> إنشاء نسخة احتياطية جديدة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        إنشاء نسخة احتياطية من قاعدة البيانات لحفظ جميع البيانات والإعدادات.
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>ملاحظة:</strong> يُنصح بإنشاء نسخة احتياطية بشكل دوري لضمان سلامة البيانات.
+                    </div>
+
+                    <form method="POST" action="{{ url_for('admin.create_backup') }}" id="backupForm">
+                        <div class="mb-3">
+                            <label class="form-label">معلومات النسخة الاحتياطية:</label>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> جميع بيانات الأصول</li>
+                                <li><i class="fas fa-check text-success"></i> سجلات الصيانة</li>
+                                <li><i class="fas fa-check text-success"></i> بيانات المستخدمين</li>
+                                <li><i class="fas fa-check text-success"></i> الفئات والمواقع</li>
+                                <li><i class="fas fa-check text-success"></i> بيانات الموظفين والموردين</li>
+                            </ul>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="createBackupBtn">
+                            <i class="fas fa-download"></i> إنشاء نسخة احتياطية
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- النسخ الاحتياطية الموجودة -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history"></i> النسخ الاحتياطية الموجودة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="backupsList">
+                        <div class="text-center py-3">
+                            <i class="fas fa-spinner fa-spin fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">جاري تحميل النسخ الاحتياطية...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="refreshBackupsList()">
+                            <i class="fas fa-refresh"></i> تحديث القائمة
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="cleanOldBackups()">
+                            <i class="fas fa-trash"></i> حذف النسخ القديمة
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات قاعدة البيانات -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database"></i> معلومات قاعدة البيانات الحالية
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="databaseInfo">
+                        <div class="text-center py-2">
+                            <i class="fas fa-spinner fa-spin"></i> جاري تحميل المعلومات...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات إضافية -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> معلومات مهمة حول النسخ الاحتياطي
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-shield-alt text-success"></i> الأمان</h6>
+                            <ul class="list-unstyled small">
+                                <li>• النسخ الاحتياطية محفوظة محلياً</li>
+                                <li>• تشمل جميع البيانات الحساسة</li>
+                                <li>• يُنصح بنسخها لمكان آمن خارجي</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-clock text-warning"></i> التوقيت</h6>
+                            <ul class="list-unstyled small">
+                                <li>• يُنصح بالنسخ الاحتياطي يومياً</li>
+                                <li>• النسخ القديمة تُحذف تلقائياً بعد 30 يوم</li>
+                                <li>• يمكن إنشاء نسخة في أي وقت</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-undo text-info"></i> الاستعادة</h6>
+                            <ul class="list-unstyled small">
+                                <li>• اضغط زر الاستعادة <i class="fas fa-undo text-success"></i> بجانب النسخة</li>
+                                <li>• يتم إنشاء نسخة أمان تلقائياً</li>
+                                <li>• يُنصح بإعادة تشغيل النظام بعد الاستعادة</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// تحميل قائمة النسخ الاحتياطية عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    refreshBackupsList();
+    loadDatabaseInfo();
+});
+
+// تحميل معلومات قاعدة البيانات
+function loadDatabaseInfo() {
+    fetch('/admin/backup/info')
+        .then(response => response.json())
+        .then(data => {
+            const databaseInfo = document.getElementById('databaseInfo');
+            
+            if (data.success) {
+                const dbSize = formatFileSize(data.current_db_size);
+                const backupSize = formatFileSize(data.total_backup_size);
+                
+                databaseInfo.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6><i class="fas fa-database text-primary"></i> قاعدة البيانات</h6>
+                                <p class="mb-1"><strong>${data.current_db_path || 'غير محدد'}</strong></p>
+                                <small class="text-muted">الحجم: ${dbSize}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6><i class="fas fa-archive text-success"></i> النسخ الاحتياطية</h6>
+                                <p class="mb-1"><strong>${data.backup_count} نسخة</strong></p>
+                                <small class="text-muted">الحجم الإجمالي: ${backupSize}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6><i class="fas fa-folder text-warning"></i> مجلد النسخ</h6>
+                                <p class="mb-1"><strong>${data.backup_dir_exists ? 'موجود' : 'غير موجود'}</strong></p>
+                                <small class="text-muted">backups/</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6><i class="fas fa-shield-alt text-info"></i> الحالة</h6>
+                                <p class="mb-1"><strong>${data.current_db_path ? 'جاهز' : 'خطأ'}</strong></p>
+                                <small class="text-muted">${data.current_db_path ? 'يمكن إنشاء النسخ' : 'تحقق من قاعدة البيانات'}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                databaseInfo.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        تعذر تحميل معلومات قاعدة البيانات: ${data.message}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('databaseInfo').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    حدث خطأ في تحميل معلومات قاعدة البيانات
+                </div>
+            `;
+        });
+}
+
+// تحديث قائمة النسخ الاحتياطية
+function refreshBackupsList() {
+    // تحديث معلومات قاعدة البيانات أيضاً
+    loadDatabaseInfo();
+    
+    fetch('/admin/backup/list')
+        .then(response => response.json())
+        .then(data => {
+            const backupsList = document.getElementById('backupsList');
+            
+            if (data.success && data.backups.length > 0) {
+                let html = '<div class="list-group">';
+                
+                data.backups.forEach(backup => {
+                    const date = new Date(backup.created_at).toLocaleString('ar-SA');
+                    const size = formatFileSize(backup.size);
+                    
+                    html += `
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">${backup.filename}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> ${date} | 
+                                    <i class="fas fa-hdd"></i> ${size}
+                                </small>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <a href="/admin/backup/download/${backup.filename}" 
+                                   class="btn btn-sm btn-outline-primary" title="تحميل">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                        onclick="restoreBackup('${backup.filename}')" title="استعادة">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteBackup('${backup.filename}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                backupsList.innerHTML = html;
+            } else {
+                backupsList.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-database fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">لا توجد نسخ احتياطية</p>
+                        <small class="text-muted">ابدأ بإنشاء نسخة احتياطية جديدة</small>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('backupsList').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    حدث خطأ في تحميل النسخ الاحتياطية
+                </div>
+            `;
+        });
+}
+
+// تنسيق حجم الملف
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// حذف نسخة احتياطية
+function deleteBackup(filename) {
+    if (confirm('هل أنت متأكد من حذف هذه النسخة الاحتياطية؟')) {
+        fetch(`/admin/backup/delete/${filename}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                refreshBackupsList();
+                showAlert('تم حذف النسخة الاحتياطية بنجاح', 'success');
+            } else {
+                showAlert('حدث خطأ: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('حدث خطأ أثناء الحذف', 'danger');
+        });
+    }
+}
+
+// حذف النسخ القديمة
+function cleanOldBackups() {
+    if (confirm('هل تريد حذف النسخ الاحتياطية الأقدم من 30 يوم؟')) {
+        fetch('/admin/backup/clean', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                refreshBackupsList();
+                showAlert(`تم حذف ${data.deleted_count} نسخة احتياطية قديمة`, 'success');
+            } else {
+                showAlert('حدث خطأ: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('حدث خطأ أثناء التنظيف', 'danger');
+        });
+    }
+}
+
+// استعادة نسخة احتياطية
+function restoreBackup(filename) {
+    const confirmMessage = `⚠️ تحذير مهم ⚠️
+
+هل أنت متأكد من استعادة هذه النسخة الاحتياطية؟
+
+${filename}
+
+سيتم:
+• استبدال قاعدة البيانات الحالية بالكامل
+• فقدان جميع البيانات المضافة بعد تاريخ هذه النسخة
+• إنشاء نسخة أمان من البيانات الحالية تلقائياً
+
+هذا الإجراء لا يمكن التراجع عنه!`;
+
+    if (confirm(confirmMessage)) {
+        // تأكيد إضافي
+        if (confirm('تأكيد أخير: هل تريد المتابعة مع استعادة النسخة الاحتياطية؟')) {
+            const restoreBtn = event.target.closest('button');
+            const originalContent = restoreBtn.innerHTML;
+            
+            restoreBtn.disabled = true;
+            restoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            fetch(`/admin/backup/restore/${filename}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('✅ ' + data.message, 'success');
+                    showAlert('🔄 يُنصح بإعادة تشغيل النظام لضمان عمل جميع الميزات بشكل صحيح', 'info');
+                    refreshBackupsList();
+                } else {
+                    showAlert('❌ حدث خطأ: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('❌ حدث خطأ أثناء الاستعادة', 'danger');
+            })
+            .finally(() => {
+                restoreBtn.disabled = false;
+                restoreBtn.innerHTML = originalContent;
+            });
+        }
+    }
+}
+
+// عرض رسالة تنبيه
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.row'));
+    
+    // إزالة التنبيه بعد 5 ثواني
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// معالجة نموذج إنشاء النسخة الاحتياطية
+document.getElementById('backupForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('createBackupBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإنشاء...';
+    
+    // إعادة تفعيل الزر بعد 5 ثواني
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-download"></i> إنشاء نسخة احتياطية';
+        refreshBackupsList();
+    }, 5000);
+});
+</script>
+{% endblock %}

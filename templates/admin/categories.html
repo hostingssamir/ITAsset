@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة الفئات - نظام إدارة الأصول التقنية{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="page-title">
+                    <i class="fas fa-tags"></i> إدارة الفئات
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                        <li class="breadcrumb-item">الإدارة</li>
+                        <li class="breadcrumb-item active">الفئات</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                    <i class="fas fa-plus"></i> إضافة فئة جديدة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list"></i> قائمة الفئات
+                <span class="badge bg-primary ms-2">{{ categories|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if categories %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>اسم الفئة</th>
+                            <th>الوصف</th>
+                            <th>عدد الأصول</th>
+                            <th>تاريخ الإنشاء</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td><strong>{{ category.name }}</strong></td>
+                            <td>{{ category.description or '-' }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ category.assets|length }}</span>
+                            </td>
+                            <td>{{ category.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="editCategory({{ category.id }}, '{{ category.name }}', '{{ category.description or '' }}')" title="تعديل">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if category.assets|length == 0 %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="deleteCategory({{ category.id }})" title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                            title="لا يمكن حذف فئة تحتوي على أصول" disabled>
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد فئات</h5>
+                <p class="text-muted">ابدأ بإضافة فئة جديدة</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة فئة -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus"></i> إضافة فئة جديدة
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.add_category') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">اسم الفئة <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">الوصف</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> حفظ الفئة
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل فئة -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit"></i> تعديل الفئة
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editCategoryForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">اسم الفئة <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">الوصف</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> حفظ التعديلات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editCategory(id, name, description) {
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_description').value = description;
+    document.getElementById('editCategoryForm').action = `/admin/categories/${id}/edit`;
+    
+    var editModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+    editModal.show();
+}
+
+function deleteCategory(id) {
+    if (confirm('هل أنت متأكد من حذف هذه الفئة؟ هذا الإجراء لا يمكن التراجع عنه.')) {
+        fetch(`/admin/categories/${id}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('حدث خطأ: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ أثناء الحذف');
+        });
+    }
+}
+</script>
+{% endblock %}
