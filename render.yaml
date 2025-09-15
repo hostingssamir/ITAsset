@@ -8,7 +8,8 @@ services:
     name: it-asset-management
     runtime: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT wsgi:app"
+    startCommand: "gunicorn --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT wsgi:app"
+    healthCheckPath: /healthz
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -20,3 +21,5 @@ services:
         value: production
       - key: FLASK_CONFIG
         value: production
+      - key: INIT_TOKEN
+        generateValue: true

@@ -22,6 +22,7 @@ from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import json
+from sqlalchemy import or_
 
 from config import config, DEFAULT_CATEGORIES, DEFAULT_LOCATIONS
 from models import db, User, Asset, Category, Location, Supplier, Employee, AssetAssignment, MaintenanceRecord, Purchase, PurchaseItem, Custody, CustodyItem, Department, License, Invoice, InvoiceItem, Notification
@@ -31,11 +32,20 @@ config_name = os.environ.get('FLASK_CONFIG') or 'default'
 app.config.from_object(config[config_name])
 config[config_name].init_app(app)
 
+# Unified pagination helper compatible with Flask-SQLAlchemy 2/3
+def paginate_query(query, page=1, per_page=20):
+    try:
+        # Flask-SQLAlchemy 3.x
+        return db.paginate(query, page=page, per_page=per_page, error_out=False)
+    except Exception:
+        # Fallback for older .paginate on Query
+        return query.paginate(page=page, per_page=per_page, error_out=False)
+
 # تهيئة قاعدة البيانات مع التطبيق
 db.init_app(app)
 
-# إنشاء الجداول والبيانات الافتراضية عند أول تشغيل على Render/الإنتاج
-with app.app_context():
+# تهيئة قاعدة البيانات والبيانات الافتراضية (عند الطلب فقط لتجنّب بطء الإقلاع)
+def initialize_defaults():
     try:
         db.create_all()
 
@@ -66,8 +76,20 @@ with app.app_context():
                     description=loc.get('description')
                 ))
         db.session.commit()
+        return True
     except Exception:
         db.session.rollback()
+        return False
+
+# نقطة نهاية آمنة لتهيئة قاعدة البيانات عند الطلب
+@app.route('/init-db')
+def init_db_endpoint():
+    token = request.args.get('token')
+    required = os.environ.get('INIT_TOKEN')
+    if not required or token != required:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    ok = initialize_defaults()
+    return jsonify({'success': ok})
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -81,7 +103,10 @@ os.makedirs(app.config.get('UPLOAD_FOLDER', 'static/uploads'), exist_ok=True)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-
+# Health check endpoint for Render
+@app.route('/healthz')
+def healthz():
+    return jsonify({'status': 'ok'}), 200
 
 # الصفحات الرئيسية
 @app.route('/')
@@ -162,7 +187,7 @@ def assets():
     
     if search:
         query = query.filter(
-            db.or_(
+            or_(
                 Asset.name.contains(search),
                 Asset.asset_tag.contains(search),
                 Asset.serial_number.contains(search)
@@ -175,7 +200,7 @@ def assets():
     if status:
         query = query.filter_by(status=status)
     
-    assets = query.paginate(page=page, per_page=20, error_out=False)
+    assets = paginate_query(query, page=page, per_page=20)
     categories = Category.query.all()
     
     return render_template('assets/list.html', assets=assets, categories=categories)
@@ -349,7 +374,7 @@ def maintenance_list():
     
     if search:
         query = query.join(Asset).filter(
-            db.or_(
+            or_(
                 MaintenanceRecord.description.contains(search),
                 Asset.name.contains(search),
                 Asset.asset_tag.contains(search)
@@ -370,8 +395,7 @@ def maintenance_list():
         date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
         query = query.filter(MaintenanceRecord.maintenance_date <= date_to_obj)
     
-    maintenance_records = query.order_by(MaintenanceRecord.maintenance_date.desc()).paginate(
-        page=page, per_page=20, error_out=False)
+    maintenance_records = paginate_query(query.order_by(MaintenanceRecord.maintenance_date.desc()), page=page, per_page=20)
     
     # إحصائيات
     completed_count = MaintenanceRecord.query.filter_by(status='completed').count()
@@ -938,7 +962,7 @@ def api_maintenance_alerts():
 
 # تسجيل وحدة الإدارة
 from admin import admin_bp
-app.register_blueprint(admin_bp)
+app.register_blueprint(admin_bp, url_prefix='/admin')
 
 if __name__ == '__main__':
     with app.app_context():
