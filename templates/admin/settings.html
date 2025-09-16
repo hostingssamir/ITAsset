@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}إعدادات المشرف{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4"><i class="fas fa-tools"></i> إعدادات المشرف</h1>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="fas fa-key"></i> تغيير كلمة مرور الحساب الحالي</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('admin.settings') }}">
+            <input type="hidden" name="action" value="change_password">
+            <div class="mb-3">
+              <label class="form-label">كلمة المرور الجديدة</label>
+              <input type="password" class="form-control" name="new_password" required minlength="6">
+              <div class="form-text">يجب أن تكون 6 أحرف على الأقل.</div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> حفظ
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="fas fa-shield-alt"></i> رمز INIT_TOKEN</h5>
+        </div>
+        <div class="card-body">
+          {% if init_token_set %}
+            <p class="text-success"><i class="fas fa-check-circle"></i> INIT_TOKEN مضبوط في البيئة.</p>
+          {% else %}
+            <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> INIT_TOKEN غير مضبوط.</p>
+          {% endif %}
+          <form method="POST" action="{{ url_for('admin.settings') }}">
+            <input type="hidden" name="action" value="rotate_init_token">
+            <button type="submit" class="btn btn-outline-warning" disabled title="قم بتحديثه من إعدادات البيئة">
+              <i class="fas fa-sync-alt"></i> تدوير INIT_TOKEN (يدوياً من البيئة)
+            </button>
+            <p class="mt-2 small text-muted">لتغيير INIT_TOKEN، حدّث متغير البيئة في منصة النشر ثم أعد التشغيل.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

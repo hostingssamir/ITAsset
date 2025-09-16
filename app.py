@@ -22,15 +22,24 @@ from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import json
-from sqlalchemy import or_
+from sqlalchemy import or_, text, inspect
+from sqlalchemy.exc import OperationalError, ProgrammingError
+from dotenv import load_dotenv
 
 from config import config, DEFAULT_CATEGORIES, DEFAULT_LOCATIONS
 from models import db, User, Asset, Category, Location, Supplier, Employee, AssetAssignment, MaintenanceRecord, Purchase, PurchaseItem, Custody, CustodyItem, Department, License, Invoice, InvoiceItem, Notification
+from admin_blueprint import admin_bp
+
+# Load .env if present for local/dev convenience
+load_dotenv()
 
 app = Flask(__name__)
 config_name = os.environ.get('FLASK_CONFIG') or 'default'
 app.config.from_object(config[config_name])
 config[config_name].init_app(app)
+
+# Register admin blueprint under /admin
+app.register_blueprint(admin_bp, url_prefix="/admin")
 
 # Unified pagination helper compatible with Flask-SQLAlchemy 2/3
 def paginate_query(query, page=1, per_page=20):
@@ -43,6 +52,18 @@ def paginate_query(query, page=1, per_page=20):
 
 # تهيئة قاعدة البيانات مع التطبيق
 db.init_app(app)
+
+# تهيئة تلقائية خفيفة عند أول طلب لتجنب أخطاء قاعدة البيانات في النشر
+@app.before_request
+def ensure_db_initialized():
+    if not app.config.get('DB_INIT_DONE'):
+        try:
+            initialize_defaults()
+        except Exception:
+            # لا تُسقط التطبيق إذا فشلت التهيئة
+            pass
+        finally:
+            app.config['DB_INIT_DONE'] = True
 
 # تهيئة قاعدة البيانات والبيانات الافتراضية (عند الطلب فقط لتجنّب بطء الإقلاع)
 def initialize_defaults():
@@ -108,41 +129,107 @@ def load_user(user_id):
 def healthz():
     return jsonify({'status': 'ok'}), 200
 
+# فحص اتصال قاعدة البيانات وتشخيص الأعطال
+@app.route('/db-check')
+def db_check():
+    token = request.args.get('token')
+    required = os.environ.get('INIT_TOKEN')
+    if not required or token != required:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    try:
+        # تحقق سريع من الاتصال
+        db.session.execute(text('SELECT 1'))
+        # فحص وجود بعض الجداول المتوقعة
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        expected = ['user', 'asset', 'category']
+        missing = [t for t in expected if t not in tables]
+        return jsonify({
+            'success': True,
+            'connected': True,
+            'tables_count': len(tables),
+            'missing_expected': missing,
+            'db_uri_driver': str(db.engine.url.drivername).split('+')[0]
+        })
+    except Exception as e:
+        # إرجاع نوع ورسالة الخطأ للمساعدة في التشخيص
+        return jsonify({
+            'success': False,
+            'error_type': e.__class__.__name__,
+            'error_str': str(e)
+        }), 500
+
+# إدارة كلمات المرور للمسؤول (محمي بواسطة INIT_TOKEN)
+@app.route('/admin/reset-admin', methods=['POST'])
+def reset_admin_password():
+    token = request.form.get('token') or request.args.get('token')
+    required = os.environ.get('INIT_TOKEN')
+    if not required or token != required:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    new_password = request.form.get('password')
+    if not new_password or len(new_password) < 6:
+        return jsonify({'success': False, 'message': 'Password must be at least 6 characters'}), 400
+    try:
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                full_name='مدير النظام',
+                role='admin'
+            )
+            db.session.add(admin)
+        admin.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # الصفحات الرئيسية
 @app.route('/')
 def index():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
     
-    # إحصائيات سريعة محسنة
-    total_assets = Asset.query.count()
-    active_assets = Asset.query.filter_by(status='active').count()
-    maintenance_assets = Asset.query.filter_by(status='maintenance').count()
-    retired_assets = Asset.query.filter_by(status='retired').count()
-    
-    # الأصول المضافة حديثاً (آخر 10 أصول)
-    recent_assets = Asset.query.order_by(Asset.created_at.desc()).limit(10).all()
-    
-    # الصيانة المستحقة
+    # إحصائيات سريعة محسنة مع حماية في حالة عدم تهيئة الجداول
+    init_needed = False
     try:
-        upcoming_maintenance = MaintenanceRecord.query.filter(
-            MaintenanceRecord.next_maintenance <= datetime.now().date() + timedelta(days=30),
-            MaintenanceRecord.status == 'scheduled'
-        ).limit(5).all()
-    except:
+        total_assets = Asset.query.count()
+        active_assets = Asset.query.filter_by(status='active').count()
+        maintenance_assets = Asset.query.filter_by(status='maintenance').count()
+        retired_assets = Asset.query.filter_by(status='retired').count()
+        
+        # الأصول المضافة حديثاً (آخر 10 أصول)
+        recent_assets = Asset.query.order_by(Asset.created_at.desc()).limit(10).all()
+        
+        # الصيانة المستحقة
+        try:
+            upcoming_maintenance = MaintenanceRecord.query.filter(
+                MaintenanceRecord.next_maintenance <= datetime.now().date() + timedelta(days=30),
+                MaintenanceRecord.status == 'scheduled'
+            ).limit(5).all()
+        except Exception:
+            upcoming_maintenance = []
+        
+        # إحصائيات الفئات للرسم البياني
+        try:
+            categories_stats = db.session.query(
+                Category.name, 
+                db.func.count(Asset.id)
+            ).join(Asset).group_by(Category.name).all()
+        except Exception:
+            categories_stats = []
+        
+        # عدد المستخدمين النشطين
+        total_users = User.query.count()
+    except (OperationalError, ProgrammingError):
+        # قاعدة البيانات غير مهيأة بعد
+        init_needed = True
+        total_assets = active_assets = maintenance_assets = retired_assets = total_users = 0
+        recent_assets = []
         upcoming_maintenance = []
-    
-    # إحصائيات الفئات للرسم البياني
-    try:
-        categories_stats = db.session.query(
-            Category.name, 
-            db.func.count(Asset.id)
-        ).join(Asset).group_by(Category.name).all()
-    except:
         categories_stats = []
-    
-    # عدد المستخدمين النشطين
-    total_users = User.query.count()
     
     return render_template('dashboard.html',
                          total_assets=total_assets,
@@ -152,14 +239,20 @@ def index():
                          recent_assets=recent_assets,
                          upcoming_maintenance=upcoming_maintenance,
                          categories_stats=categories_stats,
-                         total_users=total_users)
+                         total_users=total_users,
+                         init_needed=init_needed)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = User.query.filter_by(username=username).first()
+        try:
+            user = User.query.filter_by(username=username).first()
+        except (OperationalError, ProgrammingError) as e:
+            # فشل الاتصال أو الجداول غير موجودة – لا تُسقط التطبيق
+            flash('تعذّر الوصول لقاعدة البيانات. يرجى تهيئة الجداول عبر رابط التهيئة أو التحقق من الاتصال.', 'error')
+            return render_template('login.html'), 503
         
         if user and check_password_hash(user.password_hash, password):
             login_user(user)

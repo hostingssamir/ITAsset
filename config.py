@@ -18,6 +18,16 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///it_assets.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = True
+
+    # خيارات محرك SQLAlchemy لتحسين التوافق على Render
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,   # اختبر الاتصال قبل الاستخدام
+        'pool_recycle': 300,     # أعد تدوير الاتصال لتفادي انقطاع SSL
+        'pool_size': 2,          # حجم صغير يناسب الخطة المجانية
+        'max_overflow': 2,       # تجاوز بسيط للتحميل المؤقت
+        # SQLite needs check_same_thread disabled when used across threads (e.g., gunicorn workers)
+        'connect_args': {'check_same_thread': False}
+    }
     
     # إعدادات رفع الملفات
     UPLOAD_FOLDER = 'static/uploads'
@@ -65,6 +75,13 @@ class Config:
         if db_url and db_url.startswith('postgres://'):
             db_url = db_url.replace('postgres://', 'postgresql://', 1)
             app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+        elif not db_url:
+            # ضبط مسار SQLite مطلقًا داخل مجلد instance القابل للكتابة
+            base_dir = os.path.abspath(os.path.dirname(__file__))
+            data_dir = os.path.join(base_dir, 'instance')
+            os.makedirs(data_dir, exist_ok=True)
+            sqlite_path = os.path.join(data_dir, 'it_assets.db')
+            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + sqlite_path.replace('\\', '/')
 
         # إنشاء المجلدات المطلوبة
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
