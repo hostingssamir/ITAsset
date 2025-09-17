@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 
 from config import config, DEFAULT_CATEGORIES, DEFAULT_LOCATIONS
 from models import db, User, Asset, Category, Location, Supplier, Employee, AssetAssignment, MaintenanceRecord, Purchase, PurchaseItem, Custody, CustodyItem, Department, License, Invoice, InvoiceItem, Notification
-from admin_blueprint import admin_bp
+from admin import admin_bp
 
 # Load .env if present for local/dev convenience
 load_dotenv()
@@ -38,8 +38,9 @@ config_name = os.environ.get('FLASK_CONFIG') or 'default'
 app.config.from_object(config[config_name])
 config[config_name].init_app(app)
 
-# Register admin blueprint under /admin
-app.register_blueprint(admin_bp, url_prefix="/admin")
+# Register admin blueprint under /admin (avoid duplicate registration during reloads)
+if 'admin' not in app.blueprints:
+    app.register_blueprint(admin_bp, url_prefix="/admin")
 
 # Unified pagination helper compatible with Flask-SQLAlchemy 2/3
 def paginate_query(query, page=1, per_page=20):
